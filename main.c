@@ -35,9 +35,11 @@ DWORD GetTargetThread(const wchar_t* procName)
 BOOL InjectDLL(DWORD pId, const wchar_t* dllName)
 {
     HANDLE proc;
-    /*HMODULE hLib;*/
+    HANDLE hLib;
     LPVOID remoteString;
     LPVOID LoadLibPtr;
+    LPVOID initPtr;
+    HMODULE injectModule;
     
     if(!pId)
         return FALSE;
@@ -83,13 +85,46 @@ BOOL InjectDLL(DWORD pId, const wchar_t* dllName)
         return FALSE;
     }
     
-    HANDLE t = CreateRemoteThread(proc, NULL, 0, (LPTHREAD_START_ROUTINE)LoadLibPtr, (LPVOID)remoteString, 0, NULL);
+    // Return value of LoadLibraryW is truncated
+    hLib = 
+        (HANDLE)CreateRemoteThread(
+            proc, 
+            NULL, 
+            0, 
+            (LPTHREAD_START_ROUTINE)LoadLibPtr, 
+            (LPVOID)remoteString, 
+            0, 
+            NULL
+        );
     
-    if(t == INVALID_HANDLE_VALUE)
+    if(hLib == INVALID_HANDLE_VALUE)
     {
         printf("CreateRemoteThread failed");
         return FALSE;
     }
+    
+    injectModule = LoadLibraryW(L"inject.dll");
+    initPtr = (LPVOID)GetProcAddress(GetModuleHandle(L"inject.dll"), "Init");
+    if(!initPtr)
+    {
+        printf("GetProcAddress for Init() failed");
+        FreeLibrary(injectModule);
+        return FALSE;
+    }
+    __int64 relInitPtr = (LPBYTE)initPtr - (LPBYTE)injectModule;
+    printf("Relative Init() ptr: %I64i", relInitPtr);
+    //initPtr = (LPVOID)((LPBYTE)hLib + relInitPtr);
+    FreeLibrary(injectModule);
+    
+    (HMODULE)CreateRemoteThread(
+        proc, 
+        NULL, 
+        0, 
+        (LPTHREAD_START_ROUTINE)initPtr, 
+        NULL, 
+        0, 
+        NULL
+    );
     
     CloseHandle(proc);
     return TRUE;
@@ -100,9 +135,12 @@ int main(int argc, char* argv[])
     DWORD targetThread;
     wchar_t buf[MAX_PATH];
     
-    targetThread = GetTargetThread(L"notepad.exe");
+    targetThread = GetTargetThread(L"Prey.exe");
     if(!targetThread)
-        return 0;
+    {
+        printf("Target thread not found");
+        while(1);
+    }
     
     GetFullPathName(L"inject.dll", MAX_PATH, buf, NULL);
     wprintf(buf); printf("\n");
