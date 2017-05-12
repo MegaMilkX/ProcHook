@@ -3,6 +3,6 @@
 
 #define DLLEXPORT __declspec (dllexport)
 
-DLLEXPORT void Foo(void);
+DLLEXPORT void Init(void);
 
 #endif
