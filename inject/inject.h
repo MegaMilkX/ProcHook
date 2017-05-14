@@ -3,6 +3,8 @@
 
 #define DLLEXPORT __declspec (dllexport)
 
-DLLEXPORT void Init(void);
+extern "C"{
+DLLEXPORT void __stdcall Init(void);
+}
 
 #endif

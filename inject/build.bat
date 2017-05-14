@@ -3,8 +3,10 @@
 REM What's your project name?
 set EXENAME=inject
 
-set INCLUDE_PATHS=
-set LIB_PATHS=
+set INCLUDE_PATHS=/I "%~dp0\..\..\Aurora\include" ^
+/I "%~dp0\..\..\lib\minhook\include"
+set LIB_PATHS=/LIBPATH:"%~dp0\..\..\Aurora\lib" ^
+/LIBPATH:"%~dp0\..\..\lib\minhook\lib"
 set LIBRARIES=kernel32.lib ^
 user32.lib ^
 gdi32.lib ^
@@ -18,7 +20,9 @@ uuid.lib ^
 odbc32.lib ^
 odbccp32.lib ^
 winmm.lib ^
-Shlwapi.lib
+Shlwapi.lib ^
+aurora.lib ^
+libMinHook.x64.lib
 
 set COMPILER_ARGS=/D _CRT_SECURE_NO_WARNINGS /D "_UNICODE" /D "UNICODE" /GS /GL /analyze- /W3 /Gy /Zc:wchar_t /EHsc /MT /WX- /Zc:forScope /Gd /Oy- /Oi /Gm- /O2 /nologo
 
